@@ -62,11 +62,11 @@ export class ServerIslandComponent {
 	async init(): Promise<ThinHead> {
 		const content = await this.getIslandContent();
 
-		if (this.result.csp.cspDestination) {
+		if (this.result.cspDestination) {
 			this.result._metadata.extraScriptHashes.push(
-				await generateCspDigest(SERVER_ISLAND_REPLACER, this.result.csp.algorithm),
+				await generateCspDigest(SERVER_ISLAND_REPLACER, this.result.cspAlgorithm),
 			);
-			const contentDigest = await generateCspDigest(content, this.result.csp.algorithm);
+			const contentDigest = await generateCspDigest(content, this.result.cspAlgorithm);
 			this.result._metadata.extraScriptHashes.push(contentDigest);
 		}
 

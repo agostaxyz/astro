@@ -9,29 +9,25 @@ import type { SSRResult } from '../../../dist/types/public/internal.js';
  */
 function createCspResult(
 	overrides: {
-		directives?: SSRResult['csp']['directives'];
-		scriptDirective?: Partial<SSRResult['csp']['scriptDirective']>;
-		styleDirective?: Partial<SSRResult['csp']['styleDirective']>;
+		directives?: SSRResult['directives'];
+		scriptDirective?: Partial<SSRResult['scriptDirective']>;
+		styleDirective?: Partial<SSRResult['styleDirective']>;
 		extraScriptHashes?: string[];
 		extraStyleHashes?: string[];
 	} = {},
 ): SSRResult {
 	return {
-		csp: {
-			cspDestination: 'header',
-			algorithm: 'SHA-256',
-			directives: overrides.directives ?? [],
-			scriptDirective: {
-				resources: [],
-				hashes: [],
-				strictDynamic: false,
-				...overrides.scriptDirective,
-			},
-			styleDirective: {
-				resources: [],
-				hashes: [],
-				...overrides.styleDirective,
-			},
+		directives: overrides.directives ?? [],
+		scriptDirective: {
+			resources: [],
+			hashes: [],
+			strictDynamic: false,
+			...overrides.scriptDirective,
+		},
+		styleDirective: {
+			resources: [],
+			hashes: [],
+			...overrides.styleDirective,
 		},
 		_metadata: {
 			extraScriptHashes: overrides.extraScriptHashes ?? [],

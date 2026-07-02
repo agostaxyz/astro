@@ -9,7 +9,7 @@ type SpecificCspDirective =
 	| 'style-src-attr';
 
 export function renderCspContent(result: SSRResult): string {
-	const { scriptDirective, styleDirective, directives } = result.csp;
+	const { scriptDirective, styleDirective, directives } = result;
 
 	// `kind` is interpreted here (the single partition point): each directive's entries are grouped
 	// into the generic `script-src`/`style-src` and the more specific `-elem`/`-attr` variants.

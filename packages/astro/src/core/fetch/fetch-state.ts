@@ -422,24 +422,28 @@ export class FetchState implements AstroFetchState {
 				propagators: new Set(),
 				templateDepth: 0,
 			},
+			cspDestination: manifest.csp?.cspDestination ?? (routeData.prerender ? 'meta' : 'header'),
 			shouldInjectCspMetaTags,
-			// Mirrors `manifest.csp`. Arrays are cloned so per-request runtime inserts don't mutate
-			// the shared manifest.
-			csp: {
-				cspDestination: manifest.csp?.cspDestination ?? (routeData.prerender ? 'meta' : 'header'),
-				algorithm: cspAlgorithm,
-				directives: manifest.csp?.directives ? [...manifest.csp.directives] : [],
-				scriptDirective: {
-					resources: manifest.csp?.scriptDirective
-						? [...manifest.csp.scriptDirective.resources]
-						: [],
-					hashes: manifest.csp?.scriptDirective ? [...manifest.csp.scriptDirective.hashes] : [],
-					strictDynamic: manifest.csp?.scriptDirective?.strictDynamic ?? false,
-				},
-				styleDirective: {
-					resources: manifest.csp?.styleDirective ? [...manifest.csp.styleDirective.resources] : [],
-					hashes: manifest.csp?.styleDirective ? [...manifest.csp.styleDirective.hashes] : [],
-				},
+			cspAlgorithm,
+			directives: manifest.csp?.directives ? [...manifest.csp.directives] : [],
+			// Deprecated flat fields, kept for back-compat. Seeded from the manifest; the runtime CSP
+			// API updates the structured `scriptDirective`/`styleDirective` below (which the renderer
+			// reads), not these.
+			scriptHashes: manifest.csp?.scriptHashes ? [...manifest.csp.scriptHashes] : [],
+			scriptResources: manifest.csp?.scriptResources ? [...manifest.csp.scriptResources] : [],
+			styleHashes: manifest.csp?.styleHashes ? [...manifest.csp.styleHashes] : [],
+			styleResources: manifest.csp?.styleResources ? [...manifest.csp.styleResources] : [],
+			isStrictDynamic: manifest.csp?.isStrictDynamic ?? false,
+			// Structured fields (source of truth). Arrays are cloned so per-request runtime inserts
+			// don't mutate the shared manifest.
+			scriptDirective: {
+				resources: manifest.csp?.scriptDirective ? [...manifest.csp.scriptDirective.resources] : [],
+				hashes: manifest.csp?.scriptDirective ? [...manifest.csp.scriptDirective.hashes] : [],
+				strictDynamic: manifest.csp?.scriptDirective?.strictDynamic ?? false,
+			},
+			styleDirective: {
+				resources: manifest.csp?.styleDirective ? [...manifest.csp.styleDirective.resources] : [],
+				hashes: manifest.csp?.styleDirective ? [...manifest.csp.styleDirective.hashes] : [],
 			},
 			internalFetchHeaders: manifest.internalFetchHeaders,
 		};
@@ -619,7 +623,7 @@ export class FetchState implements AstroFetchState {
 				return;
 			}
 			const directive =
-				family === 'script' ? state.result.csp.scriptDirective : state.result.csp.styleDirective;
+				family === 'script' ? state.result.scriptDirective : state.result.styleDirective;
 			// Astro's element hashes are folded into the `-elem` directive automatically, so the
 			// footgun is specifically user-provided `default`-kind resources on the general directive,
 			// which do NOT carry over to the more specific directive.
@@ -647,24 +651,24 @@ export class FetchState implements AstroFetchState {
 		return {
 			insertDirective(payload) {
 				if (state.result) {
-					state.result.csp.directives = pushDirective(state.result.csp.directives, payload);
+					state.result.directives = pushDirective(state.result.directives, payload);
 				}
 			},
 			insertScriptResource(payload) {
 				if (!state.result) return;
 				warnFallback('script', normalizeCspResourceEntry(payload).kind);
-				state.result.csp.scriptDirective.resources.push(payload);
+				state.result.scriptDirective.resources.push(payload);
 			},
 			insertStyleResource(payload) {
 				if (!state.result) return;
 				warnFallback('style', normalizeCspResourceEntry(payload).kind);
-				state.result.csp.styleDirective.resources.push(payload);
+				state.result.styleDirective.resources.push(payload);
 			},
 			insertStyleHash(payload) {
-				state.result?.csp.styleDirective.hashes.push(payload);
+				state.result?.styleDirective.hashes.push(payload);
 			},
 			insertScriptHash(payload) {
-				state.result?.csp.scriptDirective.hashes.push(payload);
+				state.result?.scriptDirective.hashes.push(payload);
 			},
 		};
 	}

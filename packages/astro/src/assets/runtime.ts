@@ -26,9 +26,9 @@ export function createSvgComponent({ meta, attributes, children, styles }: SvgCo
 			// The styles stay inside the <svg> where they belong — we only need the
 			// hashes registered before the CSP meta tag is emitted in the <head>.
 			// propagation: 'self' ensures init() runs during bufferHeadContent().
-			if (hasStyles && result.csp.cspDestination) {
+			if (hasStyles && result.cspDestination) {
 				for (const style of styles) {
-					const hash = await generateCspDigest(style, result.csp.algorithm);
+					const hash = await generateCspDigest(style, result.cspAlgorithm);
 					result._metadata.extraStyleHashes.push(hash);
 				}
 			}
