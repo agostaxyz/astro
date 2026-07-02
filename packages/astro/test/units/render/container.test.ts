@@ -276,4 +276,48 @@ describe('Container', () => {
 
 		assert.match(result, /Is open/);
 	});
+
+	it('provides Astro.site from astroConfig', async () => {
+		const $$Astro = createAstro('');
+		const Page = createComponent((result, props, slots) => {
+			type ResultCreateAstro = (
+				$$Astro: unknown,
+				props: Record<string, unknown>,
+				slots: Record<string, unknown> | null,
+			) => ReturnType<typeof result.createAstro>;
+			const resultCreateAstro: ResultCreateAstro =
+				result.createAstro as unknown as ResultCreateAstro;
+			const Astro = resultCreateAstro($$Astro, props, slots);
+			return render`${maybeRenderHead()}<div>site:${String(Astro.site)}</div>`;
+		});
+
+		const container = await experimental_AstroContainer.create({
+			astroConfig: {
+				site: 'http://example.com/',
+			},
+		});
+		const result = await container.renderToString(Page);
+
+		assert.match(result, /site:http:\/\/example\.com\//);
+	});
+
+	it('Astro.site is undefined when astroConfig.site is not set', async () => {
+		const $$Astro = createAstro('');
+		const Page = createComponent((result, props, slots) => {
+			type ResultCreateAstro = (
+				$$Astro: unknown,
+				props: Record<string, unknown>,
+				slots: Record<string, unknown> | null,
+			) => ReturnType<typeof result.createAstro>;
+			const resultCreateAstro: ResultCreateAstro =
+				result.createAstro as unknown as ResultCreateAstro;
+			const Astro = resultCreateAstro($$Astro, props, slots);
+			return render`${maybeRenderHead()}<div>site:${String(Astro.site)}</div>`;
+		});
+
+		const container = await experimental_AstroContainer.create();
+		const result = await container.renderToString(Page);
+
+		assert.match(result, /site:undefined/);
+	});
 });

@@ -136,6 +136,7 @@ function createManifest(
 	manifest?: AstroContainerManifest,
 	renderers?: SSRLoadedRenderer[],
 	middleware?: MiddlewareHandler,
+	astroConfig?: AstroConfig,
 ): SSRManifest {
 	function middlewareInstance(): AstroMiddlewareInstance {
 		return {
@@ -162,6 +163,7 @@ function createManifest(
 		entryModules: manifest?.entryModules ?? {},
 		routes: manifest?.routes ?? [],
 		adapterName: '',
+		site: manifest?.site ?? astroConfig?.site,
 		clientDirectives: manifest?.clientDirectives ?? getDefaultClientDirectives(),
 		renderers: renderers ?? manifest?.renderers ?? [],
 		base: manifest?.base ?? ASTRO_CONFIG_DEFAULTS.base,
@@ -264,6 +266,7 @@ type AstroContainerManifest = Pick<
 	| 'compressHTML'
 	| 'trailingSlash'
 	| 'buildFormat'
+	| 'site'
 	| 'i18n'
 	| 'srcDir'
 	| 'buildClientDir'
@@ -308,7 +311,7 @@ export class experimental_AstroContainer {
 	}: AstroContainerConstructor) {
 		this.#pipeline = ContainerPipeline.create({
 			logger: createConsoleLogger({ level: 'error' }),
-			manifest: createManifest(manifest, renderers),
+			manifest: createManifest(manifest, renderers, undefined, astroConfig),
 			streaming,
 			renderers: renderers ?? manifest?.renderers ?? [],
 			resolve: async (specifier: string) => {
@@ -341,7 +344,11 @@ export class experimental_AstroContainer {
 		containerOptions: AstroContainerOptions = {},
 	): Promise<experimental_AstroContainer> {
 		const { streaming = false, manifest, renderers = [], resolve } = containerOptions;
-		const astroConfig = await validateConfig(CONTAINER_CONFIG_DEFAULTS, process.cwd(), 'container');
+		const astroConfig = await validateConfig(
+			{ ...CONTAINER_CONFIG_DEFAULTS, ...containerOptions.astroConfig },
+			process.cwd(),
+			'container',
+		);
 		return new experimental_AstroContainer({
 			streaming,
 			manifest,
