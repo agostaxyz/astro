@@ -11,6 +11,7 @@ import { provideSession } from '../session/handler.js';
 import { validateHost } from '../app/validate-headers.js';
 import { getErrorRoutePath } from '../../i18n/error-routes.js';
 import { getOutputFilename } from '../output-filename.js';
+import { REROUTABLE_STATUS_CODES } from '../constants.js';
 import type { ErrorHandler } from './handler.js';
 
 type ErrorPagePath =
@@ -127,6 +128,29 @@ export class DefaultErrorHandler implements ErrorHandler {
 					errorState,
 					this.#pagesHandler.handle.bind(this.#pagesHandler),
 				);
+				// A middleware rewrite (`ctx.rewrite()` / `next(payload)`) issued while
+				// rendering the error page swaps the state's routeData away from the
+				// error route, so the rewrite target renders instead of 404/500.astro.
+				// If that hijacked render produced another empty reroutable error
+				// response, we'd return a blank page — retry rendering the error page
+				// without middleware instead (same fallback used when middleware throws).
+				// A rewrite that produced a real body is left untouched, so middleware
+				// that intentionally rewrites error renders keeps working.
+				if (
+					skipMiddleware === false &&
+					errorState.routeData !== errorRouteData &&
+					response.body === null &&
+					REROUTABLE_STATUS_CODES.includes(response.status)
+				) {
+					return this.renderError(request, {
+						...resolvedRenderOptions,
+						status,
+						error,
+						response: originalResponse,
+						skipMiddleware: true,
+						pathname: resolvedPathname,
+					});
+				}
 				const newResponse = mergeResponses(response, originalResponse);
 				prepareResponse(newResponse, resolvedRenderOptions);
 				return newResponse;
